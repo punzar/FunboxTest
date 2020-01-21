@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/bottom_store_front"
+        android:title="@string/store_front" />
+    <item
+        android:id="@+id/bottom_back_end"
+        android:title="@string/back_end" />
+
+</menu>
