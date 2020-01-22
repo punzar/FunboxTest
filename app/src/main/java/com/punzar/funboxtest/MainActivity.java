@@ -16,7 +16,7 @@ import java.util.List;
 
 public class MainActivity extends AppCompatActivity
         implements BottomNavigationView.OnNavigationItemSelectedListener,
-        BackEndFragment.OnPhonesListInteractionListener, EditSmartPhone.OnEditBtnClcListener {
+        BackEndFragment.OnPhonesListInteractionListener, EditSmartPhone.OnEditBtnClcListener{
 
     private BottomNavigationView mBottomNavView;
 
@@ -87,4 +87,10 @@ public class MainActivity extends AppCompatActivity
 
 //        Toast.makeText(this, "PRESSED " + phone.getName(), Toast.LENGTH_SHORT).show();
     }
+
+//    @Override
+//    public void onBuyBtnClicked(int position, SmartPhone phone) {
+//        //todo
+//
+//    }
 }

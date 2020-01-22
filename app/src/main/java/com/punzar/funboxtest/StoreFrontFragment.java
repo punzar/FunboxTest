@@ -3,6 +3,7 @@ package com.punzar.funboxtest;
 import android.content.Context;
 import android.os.Bundle;
 
+import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentStatePagerAdapter;
@@ -25,7 +26,7 @@ import java.util.List;
  * Use the {@link StoreFrontFragment#newInstance} factory method to
  * create an instance of this fragment.
  */
-public class StoreFrontFragment extends Fragment {
+public class StoreFrontFragment extends Fragment implements PhonesDetailsFragment.OnBuyBtnClcListener {
     // TODO: Rename parameter arguments, choose names that match
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
     private static final String ARG_LIST = "LIST";
@@ -46,7 +47,7 @@ public class StoreFrontFragment extends Fragment {
      * Use this factory method to create a new instance of
      * this fragment using the provided parameters.
      *
-     * @param count Count of pages.
+     * @param phones List of SmartPhone for ViewPager.
      * @return A new instance of fragment StoreFrontFragment.
      */
     // TODO: Rename and change types and number of parameters
@@ -75,7 +76,7 @@ public class StoreFrontFragment extends Fragment {
 
         collectPhones();
         pager = view.findViewById(R.id.vp_store_front);
-        pagerAdapter = new StorePagerAdapter(getFragmentManager());
+        pagerAdapter = new StorePagerAdapter(getChildFragmentManager());
         pagerAdapter.setPages(mBalancePhones);
         pager.setAdapter(pagerAdapter);
 
@@ -92,6 +93,22 @@ public class StoreFrontFragment extends Fragment {
             }
         } else {
             Toast.makeText(getContext(), "Some thig wrong with Phone List", Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private void backSort(){
+        for (SmartPhone superPhone : mPhonesSuperList){
+            boolean hasChanged = false;
+            for(SmartPhone sortedPhone : mBalancePhones) {
+               if(superPhone.getName().equals(sortedPhone.getName())){
+                   superPhone.setCount(sortedPhone.getCount());
+                   hasChanged = true;
+                   break;
+               }
+            }
+            if(!hasChanged){
+                superPhone.setCount(0);
+            }
         }
     }
 
@@ -117,6 +134,23 @@ public class StoreFrontFragment extends Fragment {
     public void onDetach() {
         super.onDetach();
 //        mListener = null;
+    }
+
+
+
+    @Override
+    public void onBuyBtnClicked(int position, SmartPhone phone) {
+        if(phone.getCount() == 0){
+            mBalancePhones.remove(position);
+            pagerAdapter.notifyDataSetChanged();
+            pager.setCurrentItem(position, true);
+
+        }else {
+            mBalancePhones.set(position, phone);
+        }
+        pagerAdapter.notifyDataSetChanged();
+
+//        pager.setCurrentItem();
     }
 
 
@@ -156,19 +190,33 @@ public class StoreFrontFragment extends Fragment {
             notifyDataSetChanged();
         }
 
+
         public StorePagerAdapter(FragmentManager fm) {
             super(fm);
         }
 
         @Override
+        public void destroyItem(@NonNull ViewGroup container, int position, @NonNull Object object) {
+            super.destroyItem(container, position, object);
+        }
+
+        @Override
         public Fragment getItem(int position) {
-            return PhonesDetailsFragment.newInstance(pages.get(position));
+            return PhonesDetailsFragment.newInstance(pages.get(position), position);
         }
 
         @Override
         public int getCount() {
             return pages.size();
         }
+
+        @Override
+        public int getItemPosition(@NonNull Object object) {
+                return POSITION_NONE;
+//            }
+        }
+
+
 
     }
 }

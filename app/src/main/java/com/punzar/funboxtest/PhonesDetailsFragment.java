@@ -22,14 +22,13 @@ import android.widget.TextView;
  */
 public class PhonesDetailsFragment extends Fragment implements View.OnClickListener {
     private static final String ARG_PHONE = "PHONE";
+    private static final String ARG_POSITION = "POSITION";
 
-    private String mName;
-    private double mPrice;
-    private int mCount;
     private SmartPhone mPhone;
     private TextView mTvCount;
+    private int mPosition;
 
-//    private OnEditBtnClcListener mListener;
+   private OnBuyBtnClcListener mListener;
 
     public PhonesDetailsFragment() {
         // Required empty public constructor
@@ -42,10 +41,11 @@ public class PhonesDetailsFragment extends Fragment implements View.OnClickListe
      * @param phone Count of SmartPhone
      * @return A new instance of fragment PhoneDetailsFragment.
      */
-    public static PhonesDetailsFragment newInstance(SmartPhone phone) {
+    public static PhonesDetailsFragment newInstance(SmartPhone phone, int position) {
         PhonesDetailsFragment fragment = new PhonesDetailsFragment();
         Bundle args = new Bundle();
         args.putParcelable(ARG_PHONE, phone);
+        args.putInt(ARG_POSITION,position);
         fragment.setArguments(args);
         return fragment;
     }
@@ -55,6 +55,7 @@ public class PhonesDetailsFragment extends Fragment implements View.OnClickListe
         super.onCreate(savedInstanceState);
         if (getArguments() != null) {
             mPhone = getArguments().getParcelable(ARG_PHONE);
+            mPosition = getArguments().getInt(ARG_POSITION);
         }
     }
 
@@ -79,21 +80,24 @@ public class PhonesDetailsFragment extends Fragment implements View.OnClickListe
     }
 
     // TODO: Rename method, update argument and hook method into UI event
-//    public void onButtonPressed(int id) {
-//        if (mListener != null) {
-//            mListener.onEditBtnClicked(id);
-//        }
-//    }
+    public void onButtonPressed() {
+        if (mListener != null) {
+            mListener.onBuyBtnClicked(mPosition, mPhone);
+        }
+    }
 
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
-//        if (context instanceof OnEditBtnClcListener) {
-//            mListener = (OnEditBtnClcListener) context;
+//        if (context instanceof OnBuyBtnClcListener) {
+//            mListener = (OnBuyBtnClcListener) context;
 //        } else {
 //            throw new RuntimeException(context.toString()
 //                    + " must implement OnEditBtnClcListener");
 //        }
+        if(getParentFragment() instanceof OnBuyBtnClcListener){
+            mListener = (OnBuyBtnClcListener) getParentFragment();
+        }
     }
 
     @Override
@@ -106,14 +110,21 @@ public class PhonesDetailsFragment extends Fragment implements View.OnClickListe
     public void onClick(View view) {
         if (view.getId() == R.id.btn_buy){
 
-            if(mPhone.getCount() == 1){
-                mPhone.setCount(mPhone.getCount()-1);
-                //todo листнуть и больше не показывать
-                
-            }
+//            if(mPhone.getCount() == 1){
+//                mPhone.setCount(mPhone.getCount()-1);
+//                //todo листнуть и больше не показывать
+//
+//            }
+//            mPhone.setCount(mPhone.getCount()-1);
+            if(mPhone.getCount() <= 0){
+                onButtonPressed();
+
+            }else{
             mPhone.setCount(mPhone.getCount()-1);
             String count = mPhone.getCount() + getResources().getString(R.string.pieces);
             mTvCount.setText(count);
+            onButtonPressed();
+            }
         }
     }
 
@@ -127,8 +138,8 @@ public class PhonesDetailsFragment extends Fragment implements View.OnClickListe
      * "http://developer.android.com/training/basics/fragments/communicating.html"
      * >Communicating with Other Fragments</a> for more information.
      */
-//    public interface OnEditBtnClcListener {
+    public interface OnBuyBtnClcListener {
 //        // TODO: Update argument type and name
-//        void onEditBtnClicked(int id);
-//    }
+        void onBuyBtnClicked(int position, SmartPhone phone);
+    }
 }
