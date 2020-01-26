@@ -15,20 +15,22 @@ import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
-public class SaveLoadAdapter {
+public class SaveLoadService implements MainActivity.ReadWriteAdapter {
     private final static String FILE_NAME = "myfile";
+    private static CsvReader csvReader = new CsvReader();
 
-    public static void save(Context context, List<SmartPhone> list) throws IOException {
+    @Override
+    public void write(Context context, List<SmartPhone> smartPhoneList) throws IOException {
         Gson gson = new Gson();
-        String json = gson.toJson(list);
+        String json = gson.toJson(smartPhoneList);
 
         FileOutputStream fos = context.openFileOutput(FILE_NAME, Context.MODE_PRIVATE);
         fos.write(json.getBytes());
         fos.close();
-
     }
 
-    public static List<SmartPhone> load(Context context) throws IOException {
+    @Override
+    public List<SmartPhone> read(Context context) throws IOException {
         File file = context.getFileStreamPath(FILE_NAME);
         if (file.exists()) {
             FileInputStream fis = context.openFileInput(FILE_NAME);
@@ -54,7 +56,8 @@ public class SaveLoadAdapter {
             inputStreamReader.close();
             fis.close();
             return list;
+        }else {
+            return csvReader.readCsv(context);
         }
-        return null;
     }
 }

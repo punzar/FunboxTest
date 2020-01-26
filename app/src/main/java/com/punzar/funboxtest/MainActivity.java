@@ -37,18 +37,17 @@ public class MainActivity extends AppCompatActivity
         setContentView(R.layout.activity_main);
 
         BottomNavigationView bottomNavView = findViewById(R.id.bottom_nav_bar);
+        ReadWriteAdapter readWriteAdapter = new SaveLoadService();
         if (savedInstanceState != null) {
             mList = savedInstanceState.getParcelableArrayList(KEY_LIST);
-        }
-        try {
-            mList = SaveLoadAdapter.load(this);
-            if (mList == null) {
-                mList = new CsvReader().readCsv(this);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        } else {
 
+            try {
+                mList = readWriteAdapter.read(this);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
 
         bottomNavView.setOnNavigationItemSelectedListener(this);
         Fragment currentFragment = getSupportFragmentManager().findFragmentById(R.id.main_frame_layout);
@@ -58,7 +57,7 @@ public class MainActivity extends AppCompatActivity
 
         handler = new Handler();
         try {
-            SaveLoadAdapter.save(this, mList);
+            readWriteAdapter.write(this, mList);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -110,7 +109,8 @@ public class MainActivity extends AppCompatActivity
                             }
                             mList = newList;
                             try {
-                                SaveLoadAdapter.save(context, mList);
+                                ReadWriteAdapter readWriteAdapter = new SaveLoadService();
+                                readWriteAdapter.write(context, mList);
                             } catch (IOException e) {
                                 e.printStackTrace();
                             }
@@ -136,7 +136,8 @@ public class MainActivity extends AppCompatActivity
                             }
                             Toast.makeText(context, "New device add", Toast.LENGTH_SHORT).show();
                             try {
-                                SaveLoadAdapter.save(context, mList);
+                                ReadWriteAdapter readWriteAdapter = new SaveLoadService();
+                                readWriteAdapter.write(context, mList);
                             } catch (IOException e) {
                                 e.printStackTrace();
                             }
@@ -155,5 +156,11 @@ public class MainActivity extends AppCompatActivity
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putParcelableArrayList(KEY_LIST, (ArrayList<? extends Parcelable>) mList);
+    }
+
+    public interface ReadWriteAdapter {
+        void write(Context context, List<SmartPhone> smartPhoneList) throws IOException;
+
+        List<SmartPhone> read(Context context) throws IOException;
     }
 }

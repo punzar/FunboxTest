@@ -44,6 +44,7 @@ public class PhonesDetailsFragment extends Fragment implements View.OnClickListe
      * this fragment using the provided parameters.
      *
      * @param phone info about SmartPhone
+     * @param position position of SmartPhone in ViewPager
      * @return A new instance of fragment PhoneDetailsFragment.
      */
     public static PhonesDetailsFragment newInstance(SmartPhone phone, int position) {
@@ -95,7 +96,6 @@ public class PhonesDetailsFragment extends Fragment implements View.OnClickListe
         return view;
     }
 
-    // TODO: Rename method, update argument and hook method into UI event
     public void onButtonPressed() {
         if (mListener != null) {
             mListener.onBuyBtnClicked(mPosition, mPhone);
@@ -160,13 +160,8 @@ public class PhonesDetailsFragment extends Fragment implements View.OnClickListe
      * fragment to allow an interaction in this fragment to be communicated
      * to the activity and potentially other fragments contained in that
      * activity.
-     * <p>
-     * See the Android Training lesson <a href=
-     * "http://developer.android.com/training/basics/fragments/communicating.html"
-     * >Communicating with Other Fragments</a> for more information.
      */
     public interface OnBuyBtnClcListener {
-        //        // TODO: Update argument type and name
         void onBuyBtnClicked(int position, SmartPhone phone);
     }
 }

@@ -12,6 +12,7 @@ public class MyApplication extends Application {
         if (LeakCanary.isInAnalyzerProcess(this)) {
             return;
         }
+
         LeakCanary.install(this);
     }
 }

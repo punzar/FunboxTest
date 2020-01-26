@@ -49,7 +49,6 @@ public class StoreFrontFragment extends Fragment implements PhonesDetailsFragmen
      * @param phones List of SmartPhone for ViewPager.
      * @return A new instance of fragment StoreFrontFragment.
      */
-    // TODO: Rename and change types and number of parameters
     public static StoreFrontFragment newInstance(List<SmartPhone> phones) {
         StoreFrontFragment fragment = new StoreFrontFragment();
         Bundle args = new Bundle();
@@ -94,7 +93,8 @@ public class StoreFrontFragment extends Fragment implements PhonesDetailsFragmen
                     pagerAdapter.notifyDataSetChanged();
                 }
                 try {
-                    SaveLoadAdapter.save(getContext(), mPhonesSuperList);
+                    MainActivity.ReadWriteAdapter readWriteAdapter = new SaveLoadService();
+                    readWriteAdapter.write(getContext(), mPhonesSuperList);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -158,17 +158,6 @@ public class StoreFrontFragment extends Fragment implements PhonesDetailsFragmen
         super.onSaveInstanceState(outState);
         outState.putParcelableArrayList(KEY_BALANCE_PHONE, (ArrayList<? extends Parcelable>) mBalancePhones);
     }
-
-    /**
-     * This interface must be implemented by activities that contain this
-     * fragment to allow an interaction in this fragment to be communicated
-     * to the activity and potentially other fragments contained in that
-     * activity.
-     * <p>
-     * See the Android Training lesson <a href=
-     * "http://developer.android.com/training/basics/fragments/communicating.html"
-     * >Communicating with Other Fragments</a> for more information.
-     */
 
     private class StorePagerAdapter extends FragmentStatePagerAdapter {
 

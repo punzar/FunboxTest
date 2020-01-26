@@ -5,7 +5,6 @@
     android:layout_height="match_parent"
     tools:context=".StoreFrontFragment">
 
-    <!-- TODO: Update blank fragment layout -->
     <androidx.viewpager.widget.ViewPager
         android:id="@+id/vp_store_front"
         android:layout_width="match_parent"

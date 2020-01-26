@@ -5,6 +5,7 @@ import android.os.Bundle;
 
 import androidx.fragment.app.Fragment;
 
+import android.os.Handler;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -29,6 +30,7 @@ public class EditSmartPhone extends Fragment implements View.OnClickListener {
     private EditText mNameET, mPriceET, mCountET;
     private Button mBtn;
     private OnEditBtnClcListener mListener;
+    private Handler handler;
 
     public EditSmartPhone() {
         // Required empty public constructor
@@ -39,10 +41,9 @@ public class EditSmartPhone extends Fragment implements View.OnClickListener {
      * this fragment using the provided parameters.
      *
      * @param phone    may be null
-     * @param position
+     * @param position position of SmartPhone in RV
      * @return A new instance of fragment EditSmartPhone.
      */
-    // TODO: Rename and change types and number of parameters
     public static EditSmartPhone newInstance(SmartPhone phone, int position) {
         EditSmartPhone fragment = new EditSmartPhone();
         Bundle args = new Bundle();
@@ -79,11 +80,10 @@ public class EditSmartPhone extends Fragment implements View.OnClickListener {
             mPriceET.setText(String.valueOf(mPhone.getPrice()));
             mCountET.setText(String.valueOf(mPhone.getCount()));
         }
-
+        handler = new Handler();
         return view;
     }
 
-    // TODO: Rename method, update argument and hook method into UI event
     public void onButtonPressed(View view) {
         if (mListener != null) {
             mListener.onEditBtnClicked(view, mPhone, mPosition);
@@ -128,10 +128,15 @@ public class EditSmartPhone extends Fragment implements View.OnClickListener {
                     Thread thread = new Thread(new Runnable() {
                         @Override
                         public void run() {
-                            mPhone.setName(mNameET.getText().toString());
-                            mPhone.setPrice(Double.parseDouble(mPriceET.getText().toString()));
-                            mPhone.setCount(Integer.parseInt(mCountET.getText().toString()));
-                            onButtonPressed(view);
+                           try {
+                               mPhone.setName(mNameET.getText().toString());
+
+                               mPhone.setPrice(Double.parseDouble(mPriceET.getText().toString()));
+                               mPhone.setCount(Integer.parseInt(mCountET.getText().toString()));
+                               onButtonPressed(view);
+                           }catch (NumberFormatException e){
+                               handler.post(runToast);
+                           }
                         }
                     });
                     thread.start();
@@ -144,10 +149,14 @@ public class EditSmartPhone extends Fragment implements View.OnClickListener {
                     Thread thread = new Thread(new Runnable() {
                         @Override
                         public void run() {
-                            mPhone = new SmartPhone(mNameET.getText().toString(),
-                                    Double.parseDouble(mPriceET.getText().toString()),
-                                    Integer.parseInt(mCountET.getText().toString()));
-                            onButtonPressed(view);
+                            try {
+                                mPhone = new SmartPhone(mNameET.getText().toString(),
+                                        Double.parseDouble(mPriceET.getText().toString()),
+                                        Integer.parseInt(mCountET.getText().toString()));
+                                onButtonPressed(view);
+                            } catch (NumberFormatException e) {
+                                handler.post(runToast);
+                            }
                         }
                     });
                     thread.start();
@@ -165,15 +174,22 @@ public class EditSmartPhone extends Fragment implements View.OnClickListener {
         mBtn.setEnabled(true);
     }
 
+    Runnable runToast = new Runnable() {
+        @Override
+        public void run() {
+            Toast.makeText(getContext(),
+                    "Число слишком большое", Toast.LENGTH_SHORT).show();
+            turnOnButton();
+        }
+    };
+
     /**
      * This interface must be implemented by activities that contain this
      * fragment to allow an interaction in this fragment to be communicated
      * to the activity and potentially other fragments contained in that
      * activity.
-     * <p>
      */
     public interface OnEditBtnClcListener {
-        // TODO: Update argument type and name
         void onEditBtnClicked(View view, SmartPhone phone, int position);
     }
 }
