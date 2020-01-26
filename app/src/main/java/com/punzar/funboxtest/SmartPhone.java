@@ -9,19 +9,26 @@ public class SmartPhone implements Parcelable {
     private String name;
     private double price;
     private int count;
+    private int id;
+    private static int idCounter = 0;
 
-
+    public int getId() {
+        return id;
+    }
 
     public SmartPhone(String name, double price, int count) {
         this.name = name;
         this.price = price;
         this.count = count;
+        id = idCounter;
+        idCounter++;
     }
 
     protected SmartPhone(Parcel in) {
         name = in.readString();
         price = in.readDouble();
         count = in.readInt();
+        id = in.readInt();
     }
 
     public static final Creator<SmartPhone> CREATOR = new Creator<SmartPhone>() {
@@ -70,5 +77,6 @@ public class SmartPhone implements Parcelable {
         parcel.writeString(name);
         parcel.writeDouble(price);
         parcel.writeInt(count);
+        parcel.writeInt(id);
     }
 }

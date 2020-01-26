@@ -24,11 +24,10 @@ import android.widget.Toast;
 public class EditSmartPhone extends Fragment implements View.OnClickListener {
     private static final String ARG_PHONE = "ARG_PHONE";
     private static final String ARG_POSITION = "POSITION";
-    // TODO: Rename and change types of parameters
     private SmartPhone mPhone;
     private int mPosition;
     private EditText mNameET, mPriceET, mCountET;
-
+    private Button mBtn;
     private OnEditBtnClcListener mListener;
 
     public EditSmartPhone() {
@@ -65,15 +64,14 @@ public class EditSmartPhone extends Fragment implements View.OnClickListener {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_edit_smart_phone, container, false);
         mNameET = view.findViewById(R.id.et_name);
         mPriceET = view.findViewById(R.id.et_price);
         mCountET = view.findViewById(R.id.et_count);
-        Button btnSave = view.findViewById(R.id.btn_save);
+        mBtn = view.findViewById(R.id.btn_save);
         Button btnCancel = view.findViewById(R.id.btn_cancel);
 
-        btnSave.setOnClickListener(this);
+        mBtn.setOnClickListener(this);
         btnCancel.setOnClickListener(this);
 
         if (mPhone != null) {
@@ -81,6 +79,7 @@ public class EditSmartPhone extends Fragment implements View.OnClickListener {
             mPriceET.setText(String.valueOf(mPhone.getPrice()));
             mCountET.setText(String.valueOf(mPhone.getCount()));
         }
+
         return view;
     }
 
@@ -109,9 +108,11 @@ public class EditSmartPhone extends Fragment implements View.OnClickListener {
     }
 
     @Override
-    public void onClick(View view) {
+    public void onClick(final View view) {
+
         switch (view.getId()) {
             case R.id.btn_save:
+
                 if (mNameET.getText().toString().matches("") ||
                         mPriceET.getText().toString().matches("")
                         || mCountET.getText().toString().matches("")) {
@@ -120,16 +121,37 @@ public class EditSmartPhone extends Fragment implements View.OnClickListener {
                     break;
                 }
                 if (mPhone != null) {
-                    mPhone.setName(mNameET.getText().toString());
-                    mPhone.setPrice(Double.parseDouble(mPriceET.getText().toString()));
-                    mPhone.setCount(Integer.parseInt(mCountET.getText().toString()));
-                    onButtonPressed(view);
+
+
+                    mBtn.setEnabled(false);
+
+                    Thread thread = new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            mPhone.setName(mNameET.getText().toString());
+                            mPhone.setPrice(Double.parseDouble(mPriceET.getText().toString()));
+                            mPhone.setCount(Integer.parseInt(mCountET.getText().toString()));
+                            onButtonPressed(view);
+                        }
+                    });
+                    thread.start();
+
                     break;
                 } else {
-                    mPhone = new SmartPhone(mNameET.getText().toString(),
-                            Double.parseDouble(mPriceET.getText().toString()),
-                            Integer.parseInt(mCountET.getText().toString()));
-                    onButtonPressed(view);
+
+                    mBtn.setEnabled(false);
+
+                    Thread thread = new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            mPhone = new SmartPhone(mNameET.getText().toString(),
+                                    Double.parseDouble(mPriceET.getText().toString()),
+                                    Integer.parseInt(mCountET.getText().toString()));
+                            onButtonPressed(view);
+                        }
+                    });
+                    thread.start();
+
                     break;
                 }
 
@@ -139,15 +161,16 @@ public class EditSmartPhone extends Fragment implements View.OnClickListener {
         }
     }
 
+    public void turnOnButton() {
+        mBtn.setEnabled(true);
+    }
+
     /**
      * This interface must be implemented by activities that contain this
      * fragment to allow an interaction in this fragment to be communicated
      * to the activity and potentially other fragments contained in that
      * activity.
      * <p>
-     * See the Android Training lesson <a href=
-     * "http://developer.android.com/training/basics/fragments/communicating.html"
-     * >Communicating with Other Fragments</a> for more information.
      */
     public interface OnEditBtnClcListener {
         // TODO: Update argument type and name

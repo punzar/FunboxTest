@@ -9,12 +9,16 @@ import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentStatePagerAdapter;
 import androidx.viewpager.widget.ViewPager;
 
+import android.os.Handler;
+import android.os.Message;
 import android.os.Parcelable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
 
+
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,20 +31,15 @@ import java.util.List;
  * create an instance of this fragment.
  */
 public class StoreFrontFragment extends Fragment implements PhonesDetailsFragment.OnBuyBtnClcListener {
-    // TODO: Rename parameter arguments, choose names that match
-    // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
     private static final String ARG_LIST = "LIST";
-
-    // TODO: Rename and change types of parameters
+    private static final String KEY_BALANCE_PHONE = "KEY_BALANCE_PHONE";
 
     private ViewPager pager;
     private StorePagerAdapter pagerAdapter;
     private List<SmartPhone> mPhonesSuperList, mBalancePhones;
-
-//    private OnEditBtnClcListener mListener;
+    private Handler handler;
 
     public StoreFrontFragment() {
-        // Required empty public constructor
     }
 
     /**
@@ -71,14 +70,36 @@ public class StoreFrontFragment extends Fragment implements PhonesDetailsFragmen
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_store_front, container, false);
 
-        collectPhones();
+        if (savedInstanceState != null) {
+            mBalancePhones = savedInstanceState.getParcelableArrayList(KEY_BALANCE_PHONE);
+        } else {
+            collectPhones();
+        }
+
         pager = view.findViewById(R.id.vp_store_front);
         pagerAdapter = new StorePagerAdapter(getChildFragmentManager());
         pagerAdapter.setPages(mBalancePhones);
         pager.setAdapter(pagerAdapter);
+        handler = new Handler() {
+            public void handleMessage(android.os.Message msg) {
+                int count = msg.what;
+                int position = msg.arg1;
+                if (count == 0) {
+                    collectPhones();
+                    pagerAdapter.notifyDataSetChanged();
+                    pager.setCurrentItem(position, true);
+                } else {
+                    pagerAdapter.notifyDataSetChanged();
+                }
+                try {
+                    SaveLoadAdapter.save(getContext(), mPhonesSuperList);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        };
 
         return view;
     }
@@ -96,63 +117,47 @@ public class StoreFrontFragment extends Fragment implements PhonesDetailsFragmen
         }
     }
 
-    private void backSort(){
-        for (SmartPhone superPhone : mPhonesSuperList){
-            boolean hasChanged = false;
-            for(SmartPhone sortedPhone : mBalancePhones) {
-               if(superPhone.getName().equals(sortedPhone.getName())){
-                   superPhone.setCount(sortedPhone.getCount());
-                   hasChanged = true;
-                   break;
-               }
-            }
-            if(!hasChanged){
-                superPhone.setCount(0);
-            }
-        }
-    }
-
-    // TODO: Rename method, update argument and hook method into UI event
-//    public void onButtonPressed(Uri uri) {
-//        if (mListener != null) {
-//            mListener.onEditBtnClicked(uri);
-//        }
-//    }
 
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
-//        if (context instanceof OnEditBtnClcListener) {
-//            mListener = (OnEditBtnClcListener) context;
-//        } else {
-//            throw new RuntimeException(context.toString()
-//                    + " must implement OnEditBtnClcListener");
-//        }
     }
 
     @Override
     public void onDetach() {
         super.onDetach();
-//        mListener = null;
     }
-
 
 
     @Override
-    public void onBuyBtnClicked(int position, SmartPhone phone) {
-        if(phone.getCount() == 0){
-            mBalancePhones.remove(position);
-            pagerAdapter.notifyDataSetChanged();
-            pager.setCurrentItem(position, true);
+    public void onBuyBtnClicked(final int position, final SmartPhone phone) {
+        Thread thread = new Thread(new Runnable() {
+            Message msg;
 
-        }else {
-            mBalancePhones.set(position, phone);
-        }
-        pagerAdapter.notifyDataSetChanged();
+            @Override
+            public void run() {
 
-//        pager.setCurrentItem();
+                int count = phone.getCount();
+                if (count == 0) {
+
+                    if (position < mBalancePhones.size())
+                        mBalancePhones.remove(position);
+
+                } else {
+                    mBalancePhones.set(position, phone);
+                }
+                msg = handler.obtainMessage(count, position, 0, null);
+                handler.sendMessage(msg);
+            }
+        });
+        thread.start();
     }
 
+    @Override
+    public void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putParcelableArrayList(KEY_BALANCE_PHONE, (ArrayList<? extends Parcelable>) mBalancePhones);
+    }
 
     /**
      * This interface must be implemented by activities that contain this
@@ -164,22 +169,6 @@ public class StoreFrontFragment extends Fragment implements PhonesDetailsFragmen
      * "http://developer.android.com/training/basics/fragments/communicating.html"
      * >Communicating with Other Fragments</a> for more information.
      */
-
-//    @Override
-//    public void onNewsItemCLick(NewsEvent event) {
-//        Bundle bundle = new Bundle();
-//        bundle.putParcelable("NewsEvent", event);
-//        Fragment detailsFragment = new DetailsFragment();
-//        detailsFragment.setArguments(bundle);
-//
-//        setFragment(detailsFragment, true);
-//
-//    }
-
-//    public interface OnEditBtnClcListener {
-//        // TODO: Update argument type and name
-//        void onEditBtnClicked(Uri uri);
-//    }
 
     private class StorePagerAdapter extends FragmentStatePagerAdapter {
 
@@ -212,11 +201,7 @@ public class StoreFrontFragment extends Fragment implements PhonesDetailsFragmen
 
         @Override
         public int getItemPosition(@NonNull Object object) {
-                return POSITION_NONE;
-//            }
+            return POSITION_NONE;
         }
-
-
-
     }
 }

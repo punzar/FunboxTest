@@ -3,6 +3,7 @@ package com.punzar.funboxtest;
 import android.content.Context;
 import android.os.Bundle;
 
+import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -28,6 +29,8 @@ public class BackEndFragment extends Fragment implements View.OnClickListener {
     private static final String ARG_PHONES = "PHONES";
     private OnPhonesListInteractionListener mListener;
     private List<SmartPhone> mPhones;
+    private SmartPhoneRecyclerViewAdapter mAdapter;
+    private RecyclerView mRecyclerView;
 
     /**
      * Mandatory empty constructor for the fragment manager to instantiate the
@@ -36,7 +39,6 @@ public class BackEndFragment extends Fragment implements View.OnClickListener {
     public BackEndFragment() {
     }
 
-    // TODO: Customize parameter initialization
     @SuppressWarnings("unused")
     public static BackEndFragment newInstance(List<SmartPhone> phones) {
         BackEndFragment fragment = new BackEndFragment();
@@ -52,8 +54,10 @@ public class BackEndFragment extends Fragment implements View.OnClickListener {
 
         if (getArguments() != null) {
             mPhones = getArguments().getParcelableArrayList(ARG_PHONES);
+            mAdapter = new SmartPhoneRecyclerViewAdapter(mPhones, mListener);
         }
     }
+
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -62,12 +66,23 @@ public class BackEndFragment extends Fragment implements View.OnClickListener {
         Button btnAdd = view.findViewById(R.id.btn_add);
 
         Context context = view.getContext();
-        RecyclerView recyclerView = (RecyclerView) view.findViewById(R.id.list);
-        recyclerView.setLayoutManager(new LinearLayoutManager(context));
-        recyclerView.setAdapter(new SmartPhoneRecyclerViewAdapter(mPhones, mListener));
+        mRecyclerView = view.findViewById(R.id.list);
+        mRecyclerView.setLayoutManager(new LinearLayoutManager(context));
+        mRecyclerView.setAdapter(mAdapter);
         btnAdd.setOnClickListener(this);
-
         return view;
+    }
+
+    public void insertToRV(SmartPhone phone) {
+        if (mAdapter != null) {
+            mAdapter.insertData(phone);
+            mRecyclerView.smoothScrollToPosition(phone.getId());
+        }
+    }
+
+    public void updateRV(List<SmartPhone> newList) {
+        if (mAdapter != null)
+            mAdapter.updateData(newList);
     }
 
 
@@ -91,6 +106,12 @@ public class BackEndFragment extends Fragment implements View.OnClickListener {
     @Override
     public void onClick(View view) {
         mListener.onListFragmentInteraction(null, mPhones.size());
+    }
+
+    @Override
+    public void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putParcelableArrayList(ARG_PHONES, (ArrayList<? extends Parcelable>) mPhones);
     }
 
     /**

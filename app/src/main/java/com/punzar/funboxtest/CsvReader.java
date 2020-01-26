@@ -24,6 +24,7 @@ public class CsvReader {
             int count = Integer.parseInt(tokens[2].substring(1, tokens[2].length() - 1));
             list.add(new SmartPhone(tokens[0].substring(1, tokens[0].length() - 1), price, count));
         }
+        reader.close();
         return list;
     }
 }

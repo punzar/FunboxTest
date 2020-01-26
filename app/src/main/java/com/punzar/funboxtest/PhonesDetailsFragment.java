@@ -1,16 +1,19 @@
 package com.punzar.funboxtest;
 
 import android.content.Context;
-import android.net.Uri;
 import android.os.Bundle;
 
 import androidx.fragment.app.Fragment;
 
+import android.os.Handler;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
+
+import java.util.concurrent.TimeUnit;
 
 
 /**
@@ -27,8 +30,10 @@ public class PhonesDetailsFragment extends Fragment implements View.OnClickListe
     private SmartPhone mPhone;
     private TextView mTvCount;
     private int mPosition;
+    private Handler handler;
+    private Button btnBuy;
 
-   private OnBuyBtnClcListener mListener;
+    private OnBuyBtnClcListener mListener;
 
     public PhonesDetailsFragment() {
         // Required empty public constructor
@@ -38,14 +43,14 @@ public class PhonesDetailsFragment extends Fragment implements View.OnClickListe
      * Use this factory method to create a new instance of
      * this fragment using the provided parameters.
      *
-     * @param phone Count of SmartPhone
+     * @param phone info about SmartPhone
      * @return A new instance of fragment PhoneDetailsFragment.
      */
     public static PhonesDetailsFragment newInstance(SmartPhone phone, int position) {
         PhonesDetailsFragment fragment = new PhonesDetailsFragment();
         Bundle args = new Bundle();
         args.putParcelable(ARG_PHONE, phone);
-        args.putInt(ARG_POSITION,position);
+        args.putInt(ARG_POSITION, position);
         fragment.setArguments(args);
         return fragment;
     }
@@ -57,17 +62,18 @@ public class PhonesDetailsFragment extends Fragment implements View.OnClickListe
             mPhone = getArguments().getParcelable(ARG_PHONE);
             mPosition = getArguments().getInt(ARG_POSITION);
         }
+
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_phones_details, container, false);
+        final View view = inflater.inflate(R.layout.fragment_phones_details, container, false);
 
         TextView tvName = view.findViewById(R.id.tv_name);
         TextView tvPrice = view.findViewById(R.id.tv_price);
         mTvCount = view.findViewById(R.id.tv_count);
-        Button btnBuy = view.findViewById(R.id.btn_buy);
+        btnBuy = view.findViewById(R.id.btn_buy);
 
         tvName.setText(mPhone.getName());
         String price = mPhone.getPrice() + getResources().getString(R.string.currency);
@@ -75,6 +81,16 @@ public class PhonesDetailsFragment extends Fragment implements View.OnClickListe
         String count = mPhone.getCount() + getResources().getString(R.string.pieces);
         mTvCount.setText(count);
         btnBuy.setOnClickListener(this);
+        handler = new Handler() {
+            public void handlePurchase(android.os.Message msg) {
+                String count = msg.what + getResources().getString(R.string.pieces);
+                mTvCount.setText(count);
+                if (msg.what > 0) {
+                    btnBuy.setEnabled(true);
+                }
+
+            }
+        };
 
         return view;
     }
@@ -89,13 +105,7 @@ public class PhonesDetailsFragment extends Fragment implements View.OnClickListe
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
-//        if (context instanceof OnBuyBtnClcListener) {
-//            mListener = (OnBuyBtnClcListener) context;
-//        } else {
-//            throw new RuntimeException(context.toString()
-//                    + " must implement OnEditBtnClcListener");
-//        }
-        if(getParentFragment() instanceof OnBuyBtnClcListener){
+        if (getParentFragment() instanceof OnBuyBtnClcListener) {
             mListener = (OnBuyBtnClcListener) getParentFragment();
         }
     }
@@ -103,28 +113,45 @@ public class PhonesDetailsFragment extends Fragment implements View.OnClickListe
     @Override
     public void onDetach() {
         super.onDetach();
-//        mListener = null;
+        mListener = null;
     }
 
     @Override
     public void onClick(View view) {
-        if (view.getId() == R.id.btn_buy){
+        if (view.getId() == R.id.btn_buy) {
+            btnBuy.setEnabled(false);
+            final Context context = getContext();
+            Thread thread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        TimeUnit.SECONDS.sleep(3);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    if (mPhone.getCount() <= 0) {
+                        onButtonPressed();
+                        handler.sendEmptyMessage(mPhone.getCount());
 
-//            if(mPhone.getCount() == 1){
-//                mPhone.setCount(mPhone.getCount()-1);
-//                //todo листнуть и больше не показывать
-//
-//            }
-//            mPhone.setCount(mPhone.getCount()-1);
-            if(mPhone.getCount() <= 0){
-                onButtonPressed();
-
-            }else{
-            mPhone.setCount(mPhone.getCount()-1);
-            String count = mPhone.getCount() + getResources().getString(R.string.pieces);
-            mTvCount.setText(count);
-            onButtonPressed();
-            }
+                    } else {
+                        mPhone.setCount(mPhone.getCount() - 1);
+                        handler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                try {
+                                    String count = mPhone.getCount() + getResources().getString(R.string.pieces);
+                                    mTvCount.setText(count);
+                                } catch (IllegalStateException e) {
+                                    e.printStackTrace();
+                                }
+                                Toast.makeText(context, "Item in your inventory", Toast.LENGTH_SHORT).show();
+                            }
+                        });
+                        onButtonPressed();
+                    }
+                }
+            });
+            thread.start();
         }
     }
 
@@ -139,7 +166,7 @@ public class PhonesDetailsFragment extends Fragment implements View.OnClickListe
      * >Communicating with Other Fragments</a> for more information.
      */
     public interface OnBuyBtnClcListener {
-//        // TODO: Update argument type and name
+        //        // TODO: Update argument type and name
         void onBuyBtnClicked(int position, SmartPhone phone);
     }
 }

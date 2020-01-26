@@ -5,38 +5,63 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
 
+import android.content.Context;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Parcelable;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Toast;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity
         implements BottomNavigationView.OnNavigationItemSelectedListener,
-        BackEndFragment.OnPhonesListInteractionListener, EditSmartPhone.OnEditBtnClcListener{
+        BackEndFragment.OnPhonesListInteractionListener, EditSmartPhone.OnEditBtnClcListener {
 
-    private BottomNavigationView mBottomNavView;
+    private static final String TAG_STORE_FRONT = "STORE_FRONT";
+    private static final String TAG_BACK_END = "BACK_END";
+    private static final String TAG_EDIT_SMART_PHONE = "EDIT_SMART_PHONE";
+    private static final String KEY_LIST = "KEY_LIST";
+    private static Handler handler;
 
-    List<SmartPhone> list;
+    private List<SmartPhone> mList;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        mBottomNavView = findViewById(R.id.bottom_nav_bar);
-
+        BottomNavigationView bottomNavView = findViewById(R.id.bottom_nav_bar);
+        if (savedInstanceState != null) {
+            mList = savedInstanceState.getParcelableArrayList(KEY_LIST);
+        }
         try {
-            list = new CsvReader().readCsv(this);
+            mList = SaveLoadAdapter.load(this);
+            if (mList == null) {
+                mList = new CsvReader().readCsv(this);
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
 
-        mBottomNavView.setOnNavigationItemSelectedListener(this);
-        mBottomNavView.setSelectedItemId(R.id.bottom_store_front);
+
+        bottomNavView.setOnNavigationItemSelectedListener(this);
+        Fragment currentFragment = getSupportFragmentManager().findFragmentById(R.id.main_frame_layout);
+        if (currentFragment == null) {
+            bottomNavView.setSelectedItemId(R.id.bottom_store_front);
+        }
+
+        handler = new Handler();
+        try {
+            SaveLoadAdapter.save(this, mList);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
     }
 
@@ -44,53 +69,91 @@ public class MainActivity extends AppCompatActivity
     public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
         switch (menuItem.getItemId()) {
             case R.id.bottom_store_front:
-                setFragment(StoreFrontFragment.newInstance(list));
+                setFragment(StoreFrontFragment.newInstance(mList), TAG_STORE_FRONT);
                 break;
             case R.id.bottom_back_end:
-                setFragment(BackEndFragment.newInstance(list));
+                setFragment(BackEndFragment.newInstance(mList), TAG_BACK_END);
                 break;
         }
         return true;
     }
 
-    private void setFragment(Fragment fragment) {
+    private void setFragment(Fragment fragment, String tag) {
         FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
-        fragmentTransaction.replace(R.id.main_frame_layout, fragment);
+        fragmentTransaction.addToBackStack(null);
+        fragmentTransaction.replace(R.id.main_frame_layout, fragment, tag);
         fragmentTransaction.commit();
     }
 
     @Override
     public void onListFragmentInteraction(SmartPhone item, int position) {
-        //Toast.makeText(this,"YES " + item.getName(),Toast.LENGTH_SHORT).show();
-        setFragment(EditSmartPhone.newInstance(item, position));
-        //list.set(position, item);
+        setFragment(EditSmartPhone.newInstance(item, position), TAG_EDIT_SMART_PHONE);
+    }
+
+    @Override
+    public void onEditBtnClicked(View view, final SmartPhone phone, final int position) {
+        switch (view.getId()) {
+            case R.id.btn_save:
+                if (position < mList.size()) {
+                    final Context context = this;
+                    handler.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            List<SmartPhone> newList = new ArrayList<>(mList);
+                            newList.set(position, phone);
+                            Fragment fragment = getSupportFragmentManager().findFragmentById(R.id.main_frame_layout);
+                            if (fragment instanceof EditSmartPhone) {
+                                ((EditSmartPhone) fragment).turnOnButton();
+                            }
+                            if (fragment instanceof BackEndFragment) {
+                                ((BackEndFragment) fragment).updateRV(newList);
+                            }
+                            mList = newList;
+                            try {
+                                SaveLoadAdapter.save(context, mList);
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                            Toast.makeText(context, "Data update", Toast.LENGTH_SHORT).show();
+                        }
+                    }, 5 * 1000);
+
+                    break;
+                } else {
+                    final Context context = this;
+                    handler.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            Fragment fragment = getSupportFragmentManager().findFragmentById(R.id.main_frame_layout);
+
+                            if (fragment instanceof EditSmartPhone) {
+                                ((EditSmartPhone) fragment).turnOnButton();
+                            }
+                            if (fragment instanceof BackEndFragment) {
+                                ((BackEndFragment) fragment).insertToRV(phone);
+                            } else {
+                                mList.add(phone);
+                            }
+                            Toast.makeText(context, "New device add", Toast.LENGTH_SHORT).show();
+                            try {
+                                SaveLoadAdapter.save(context, mList);
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }, 5 * 1000);
+                    break;
+                }
+            case R.id.btn_cancel:
+                onBackPressed();
+                break;
+        }
 
     }
 
     @Override
-    public void onEditBtnClicked(View view, SmartPhone phone, int position) {
-        switch (view.getId()) {
-            case R.id.btn_save:
-                if (position < list.size()) {
-                    list.set(position, phone);
-                    setFragment(BackEndFragment.newInstance(list));
-                    break;
-                } else {
-                    list.add(phone);
-                    setFragment(BackEndFragment.newInstance(list));
-                    break;
-                }
-            case R.id.btn_cancel:
-                setFragment(BackEndFragment.newInstance(list));
-                break;
-        }
-
-//        Toast.makeText(this, "PRESSED " + phone.getName(), Toast.LENGTH_SHORT).show();
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putParcelableArrayList(KEY_LIST, (ArrayList<? extends Parcelable>) mList);
     }
-
-//    @Override
-//    public void onBuyBtnClicked(int position, SmartPhone phone) {
-//        //todo
-//
-//    }
 }
