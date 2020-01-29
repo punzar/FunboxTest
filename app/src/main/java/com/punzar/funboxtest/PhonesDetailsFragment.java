@@ -32,7 +32,6 @@ public class PhonesDetailsFragment extends Fragment implements View.OnClickListe
     private int mPosition;
     private Handler handler;
     private Button btnBuy;
-    private volatile boolean stop = false;
     private OnBuyBtnClcListener mListener;
 
     public PhonesDetailsFragment() {
@@ -124,18 +123,23 @@ public class PhonesDetailsFragment extends Fragment implements View.OnClickListe
             Thread thread = new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    try {
-                        TimeUnit.SECONDS.sleep(3);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                    while (!stop) {
+
                         if (mPhone.getCount() <= 0) {
                             onButtonPressed();
+                            try {
+                                TimeUnit.SECONDS.sleep(3);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
                             handler.sendEmptyMessage(mPhone.getCount());
 
                         } else {
                             mPhone.setCount(mPhone.getCount() - 1);
+                            try {
+                                TimeUnit.SECONDS.sleep(3);
+                            }catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
                             handler.post(new Runnable() {
                                 @Override
                                 public void run() {
@@ -151,8 +155,6 @@ public class PhonesDetailsFragment extends Fragment implements View.OnClickListe
                             });
                             onButtonPressed();
                         }
-                        stop = true;
-                    }
                 }
             });
             thread.start();
@@ -162,7 +164,6 @@ public class PhonesDetailsFragment extends Fragment implements View.OnClickListe
     @Override
     public void onDestroy() {
         super.onDestroy();
-        stop = true;
     }
 
     /**
