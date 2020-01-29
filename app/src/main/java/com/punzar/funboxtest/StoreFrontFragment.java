@@ -17,11 +17,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
 
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-
 
 /**
  * A simple {@link Fragment} subclass.
@@ -33,12 +31,13 @@ import java.util.List;
 public class StoreFrontFragment extends Fragment implements PhonesDetailsFragment.OnBuyBtnClcListener {
     private static final String ARG_LIST = "LIST";
     private static final String KEY_BALANCE_PHONE = "KEY_BALANCE_PHONE";
-    private static final String KEY_VIEW_PAGER = "KEY_VIEW_PAGER";
+    private static final String ARG_PAGE_POSITION = "ARG_PAGE_POSITION";
 
     private ViewPager pager;
     private StorePagerAdapter pagerAdapter;
     private List<SmartPhone> mPhonesSuperList, mBalancePhones;
     private Handler handler;
+    private OnSavePagerPosition mListener;
     private int mPagerPosition = 0;
 
     public StoreFrontFragment() {
@@ -49,12 +48,14 @@ public class StoreFrontFragment extends Fragment implements PhonesDetailsFragmen
      * this fragment using the provided parameters.
      *
      * @param phones List of SmartPhone for ViewPager.
+     * @param position number of page position, 0 by default .
      * @return A new instance of fragment StoreFrontFragment.
      */
-    public static StoreFrontFragment newInstance(List<SmartPhone> phones) {
+    public static StoreFrontFragment newInstance(List<SmartPhone> phones, int position) {
         StoreFrontFragment fragment = new StoreFrontFragment();
         Bundle args = new Bundle();
         args.putParcelableArrayList(ARG_LIST, (ArrayList<? extends Parcelable>) phones);
+        args.putInt(ARG_PAGE_POSITION, position);
         fragment.setArguments(args);
         return fragment;
     }
@@ -64,9 +65,7 @@ public class StoreFrontFragment extends Fragment implements PhonesDetailsFragmen
         super.onCreate(savedInstanceState);
         if (getArguments() != null) {
             mPhonesSuperList = getArguments().getParcelableArrayList(ARG_LIST);
-        }
-        if(savedInstanceState != null) {
-            mPagerPosition = savedInstanceState.getInt(KEY_VIEW_PAGER);
+            mPagerPosition = getArguments().getInt(ARG_PAGE_POSITION, 0);
         }
     }
 
@@ -75,16 +74,34 @@ public class StoreFrontFragment extends Fragment implements PhonesDetailsFragmen
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_store_front, container, false);
 
-//        if (savedInstanceState != null) {
-//            mBalancePhones = savedInstanceState.getParcelableArrayList(KEY_BALANCE_PHONE);
-//        } else {
-            collectPhones();
-//        }
+        collectPhones();
 
         pager = view.findViewById(R.id.vp_store_front);
         pagerAdapter = new StorePagerAdapter(getChildFragmentManager());
         pagerAdapter.setPages(mBalancePhones);
         pager.setAdapter(pagerAdapter);
+        if(mPagerPosition < mBalancePhones.size()) {
+            pager.setCurrentItem(mPagerPosition);
+        }else{
+            pager.setCurrentItem(mPagerPosition - 1);
+        }
+
+        pager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
+            @Override
+            public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
+                mListener.onSavePagerPosition(position);
+            }
+
+            @Override
+            public void onPageSelected(int position) {
+
+            }
+
+            @Override
+            public void onPageScrollStateChanged(int state) {
+
+            }
+        });
         handler = new Handler() {
             public void handleMessage(android.os.Message msg) {
                 int count = msg.what;
@@ -93,11 +110,11 @@ public class StoreFrontFragment extends Fragment implements PhonesDetailsFragmen
                 if (count == 0) {
 
                     pagerAdapter.notifyDataSetChanged();
-                    if (position == size - 1){
+                    if (position == size - 1) {
                         pager.setCurrentItem(position - 1, true);
                         mBalancePhones.remove(position);
                         pagerAdapter.notifyDataSetChanged();
-                    }else {
+                    } else {
                         pager.setCurrentItem(position, true);
                         mBalancePhones.remove(position);
                         pagerAdapter.notifyDataSetChanged();
@@ -116,6 +133,14 @@ public class StoreFrontFragment extends Fragment implements PhonesDetailsFragmen
 
         return view;
     }
+
+//    @Override
+//    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+//        super.onViewCreated(view, savedInstanceState);
+//        if (savedInstanceState != null) {
+//            pager.setCurrentItem(mPagerPosition);
+//        }
+//    }
 
     @Override
     public void onResume() {
@@ -139,26 +164,26 @@ public class StoreFrontFragment extends Fragment implements PhonesDetailsFragmen
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
+        if (context instanceof OnSavePagerPosition) {
+            mListener = (OnSavePagerPosition) context;
+        } else {
+            throw new RuntimeException(context.toString()
+                    + " must implement OnSavePagerPosition");
+        }
     }
 
     @Override
     public void onDetach() {
         super.onDetach();
+        mListener = null;
 
-    }
-
-    @Override
-    public void onStop() {
-        super.onStop();
-//        Bundle bundle = new Bundle();
-//        bundle.putInt(KEY_VIEW_PAGER, pager.getCurrentItem());
-//        onSaveInstanceState(bundle);
     }
 
     @Override
     public void onBuyBtnClicked(final int position, final SmartPhone phone) {
         Thread thread = new Thread(new Runnable() {
             Message msg;
+//            volatile boolean stop = false;
 
             @Override
             public void run() {
@@ -188,56 +213,44 @@ public class StoreFrontFragment extends Fragment implements PhonesDetailsFragmen
     public void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putParcelableArrayList(KEY_BALANCE_PHONE, (ArrayList<? extends Parcelable>) mBalancePhones);
-        outState.putInt(KEY_VIEW_PAGER, pager.getCurrentItem());
-    }
+            }
 
-    private class StorePagerAdapter extends FragmentStatePagerAdapter {
+            private class StorePagerAdapter extends FragmentStatePagerAdapter {
 
-        private List<SmartPhone> pages = new ArrayList<>();
+                private List<SmartPhone> pages = new ArrayList<>();
 
-        public void setPages(List<SmartPhone> pages) {
-            this.pages = pages;
-            notifyDataSetChanged();
+                public void setPages(List<SmartPhone> pages) {
+                    this.pages = pages;
+                    notifyDataSetChanged();
+                }
+
+                public StorePagerAdapter(FragmentManager fm) {
+                    super(fm);
+                }
+
+                @Override
+                public void destroyItem(@NonNull ViewGroup container, int position, @NonNull Object object) {
+                    super.destroyItem(container, position, object);
+                }
+
+                @Override
+                public Fragment getItem(int position) {
+                    return PhonesDetailsFragment.newInstance(pages.get(position), position);
+                }
+
+                @Override
+                public int getCount() {
+                    return pages.size();
+                }
+
+                @Override
+                public int getItemPosition(@NonNull Object object) {
+                    return POSITION_NONE;
+                }
+            }
+
+            interface OnSavePagerPosition {
+                void onSavePagerPosition(int position);
+            }
+
         }
-
-        @Override
-        public void restoreState(Parcelable state, ClassLoader loader) {
-            super.restoreState(state, loader);
-        }
-
-        @Override
-        public Parcelable saveState() {
-            return super.saveState();
-        }
-
-        @Override
-        public void notifyDataSetChanged() {
-            super.notifyDataSetChanged();
-        }
-
-        public StorePagerAdapter(FragmentManager fm) {
-            super(fm);
-        }
-
-        @Override
-        public void destroyItem(@NonNull ViewGroup container, int position, @NonNull Object object) {
-            super.destroyItem(container, position, object);
-        }
-
-        @Override
-        public Fragment getItem(int position) {
-            return PhonesDetailsFragment.newInstance(pages.get(position), position);
-        }
-
-        @Override
-        public int getCount() {
-            return pages.size();
-        }
-
-        @Override
-        public int getItemPosition(@NonNull Object object) {
-            return POSITION_NONE;
-        }
-    }
-
-}

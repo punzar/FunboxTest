@@ -21,15 +21,18 @@ import java.util.List;
 
 public class MainActivity extends AppCompatActivity
         implements BottomNavigationView.OnNavigationItemSelectedListener,
-        BackEndFragment.OnPhonesListInteractionListener, EditSmartPhone.OnEditBtnClcListener {
+        BackEndFragment.OnPhonesListInteractionListener, EditSmartPhone.OnEditBtnClcListener,
+        StoreFrontFragment.OnSavePagerPosition {
 
     private static final String TAG_STORE_FRONT = "STORE_FRONT";
     private static final String TAG_BACK_END = "BACK_END";
     private static final String TAG_EDIT_SMART_PHONE = "EDIT_SMART_PHONE";
     private static final String KEY_LIST = "KEY_LIST";
+    private static final String KEY_POSITION = "KEY_POSITION";
     private static Handler handler;
 
     private List<SmartPhone> mList;
+    private int mPosition = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,6 +43,7 @@ public class MainActivity extends AppCompatActivity
         ReadWriteAdapter readWriteAdapter = new SaveLoadService();
         if (savedInstanceState != null) {
             mList = savedInstanceState.getParcelableArrayList(KEY_LIST);
+            mPosition = savedInstanceState.getInt(KEY_POSITION);
         } else {
 
             try {
@@ -68,7 +72,7 @@ public class MainActivity extends AppCompatActivity
     public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
         switch (menuItem.getItemId()) {
             case R.id.bottom_store_front:
-                setFragment(StoreFrontFragment.newInstance(mList), TAG_STORE_FRONT);
+                setFragment(StoreFrontFragment.newInstance(mList, mPosition), TAG_STORE_FRONT);
                 break;
             case R.id.bottom_back_end:
                 setFragment(BackEndFragment.newInstance(mList), TAG_BACK_END);
@@ -156,6 +160,12 @@ public class MainActivity extends AppCompatActivity
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putParcelableArrayList(KEY_LIST, (ArrayList<? extends Parcelable>) mList);
+        outState.putInt(KEY_POSITION, mPosition);
+    }
+
+    @Override
+    public void onSavePagerPosition(int position) {
+        mPosition = position;
     }
 
     public interface ReadWriteAdapter {
