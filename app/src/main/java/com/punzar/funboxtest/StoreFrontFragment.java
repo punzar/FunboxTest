@@ -33,11 +33,13 @@ import java.util.List;
 public class StoreFrontFragment extends Fragment implements PhonesDetailsFragment.OnBuyBtnClcListener {
     private static final String ARG_LIST = "LIST";
     private static final String KEY_BALANCE_PHONE = "KEY_BALANCE_PHONE";
+    private static final String KEY_VIEW_PAGER = "KEY_VIEW_PAGER";
 
     private ViewPager pager;
     private StorePagerAdapter pagerAdapter;
     private List<SmartPhone> mPhonesSuperList, mBalancePhones;
     private Handler handler;
+    private int mPagerPosition = 0;
 
     public StoreFrontFragment() {
     }
@@ -63,7 +65,9 @@ public class StoreFrontFragment extends Fragment implements PhonesDetailsFragmen
         if (getArguments() != null) {
             mPhonesSuperList = getArguments().getParcelableArrayList(ARG_LIST);
         }
-
+        if(savedInstanceState != null) {
+            mPagerPosition = savedInstanceState.getInt(KEY_VIEW_PAGER);
+        }
     }
 
     @Override
@@ -71,11 +75,11 @@ public class StoreFrontFragment extends Fragment implements PhonesDetailsFragmen
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_store_front, container, false);
 
-        if (savedInstanceState != null) {
-            mBalancePhones = savedInstanceState.getParcelableArrayList(KEY_BALANCE_PHONE);
-        } else {
+//        if (savedInstanceState != null) {
+//            mBalancePhones = savedInstanceState.getParcelableArrayList(KEY_BALANCE_PHONE);
+//        } else {
             collectPhones();
-        }
+//        }
 
         pager = view.findViewById(R.id.vp_store_front);
         pagerAdapter = new StorePagerAdapter(getChildFragmentManager());
@@ -85,10 +89,19 @@ public class StoreFrontFragment extends Fragment implements PhonesDetailsFragmen
             public void handleMessage(android.os.Message msg) {
                 int count = msg.what;
                 int position = msg.arg1;
+                int size = msg.arg2;
                 if (count == 0) {
-                    collectPhones();
+
                     pagerAdapter.notifyDataSetChanged();
-                    pager.setCurrentItem(position, true);
+                    if (position == size - 1){
+                        pager.setCurrentItem(position - 1, true);
+                        mBalancePhones.remove(position);
+                        pagerAdapter.notifyDataSetChanged();
+                    }else {
+                        pager.setCurrentItem(position, true);
+                        mBalancePhones.remove(position);
+                        pagerAdapter.notifyDataSetChanged();
+                    }
                 } else {
                     pagerAdapter.notifyDataSetChanged();
                 }
@@ -102,6 +115,11 @@ public class StoreFrontFragment extends Fragment implements PhonesDetailsFragmen
         };
 
         return view;
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
     }
 
     private void collectPhones() {
@@ -126,8 +144,16 @@ public class StoreFrontFragment extends Fragment implements PhonesDetailsFragmen
     @Override
     public void onDetach() {
         super.onDetach();
+
     }
 
+    @Override
+    public void onStop() {
+        super.onStop();
+//        Bundle bundle = new Bundle();
+//        bundle.putInt(KEY_VIEW_PAGER, pager.getCurrentItem());
+//        onSaveInstanceState(bundle);
+    }
 
     @Override
     public void onBuyBtnClicked(final int position, final SmartPhone phone) {
@@ -138,15 +164,20 @@ public class StoreFrontFragment extends Fragment implements PhonesDetailsFragmen
             public void run() {
 
                 int count = phone.getCount();
-                if (count == 0) {
-
-                    if (position < mBalancePhones.size())
-                        mBalancePhones.remove(position);
-
-                } else {
-                    mBalancePhones.set(position, phone);
-                }
-                msg = handler.obtainMessage(count, position, 0, null);
+                int size = mBalancePhones.size();
+//                if (count == 0) {
+//
+//                    if (position < mBalancePhones.size()) {
+////                        pager.setCurrentItem(position - 1, true);
+//                        mBalancePhones.remove(position);
+////                        pagerAdapter.notifyDataSetChanged();
+//                    }
+//
+//                } else {
+//                    mBalancePhones.set(position, phone);
+//                }
+                mBalancePhones.set(position, phone);
+                msg = handler.obtainMessage(count, position, size, null);
                 handler.sendMessage(msg);
             }
         });
@@ -157,6 +188,7 @@ public class StoreFrontFragment extends Fragment implements PhonesDetailsFragmen
     public void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putParcelableArrayList(KEY_BALANCE_PHONE, (ArrayList<? extends Parcelable>) mBalancePhones);
+        outState.putInt(KEY_VIEW_PAGER, pager.getCurrentItem());
     }
 
     private class StorePagerAdapter extends FragmentStatePagerAdapter {
@@ -168,6 +200,20 @@ public class StoreFrontFragment extends Fragment implements PhonesDetailsFragmen
             notifyDataSetChanged();
         }
 
+        @Override
+        public void restoreState(Parcelable state, ClassLoader loader) {
+            super.restoreState(state, loader);
+        }
+
+        @Override
+        public Parcelable saveState() {
+            return super.saveState();
+        }
+
+        @Override
+        public void notifyDataSetChanged() {
+            super.notifyDataSetChanged();
+        }
 
         public StorePagerAdapter(FragmentManager fm) {
             super(fm);
@@ -193,4 +239,5 @@ public class StoreFrontFragment extends Fragment implements PhonesDetailsFragmen
             return POSITION_NONE;
         }
     }
+
 }
