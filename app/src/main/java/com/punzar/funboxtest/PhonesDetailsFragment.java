@@ -32,7 +32,7 @@ public class PhonesDetailsFragment extends Fragment implements View.OnClickListe
     private int mPosition;
     private Handler handler;
     private Button btnBuy;
-
+    private volatile boolean stop = false;
     private OnBuyBtnClcListener mListener;
 
     public PhonesDetailsFragment() {
@@ -43,7 +43,7 @@ public class PhonesDetailsFragment extends Fragment implements View.OnClickListe
      * Use this factory method to create a new instance of
      * this fragment using the provided parameters.
      *
-     * @param phone info about SmartPhone
+     * @param phone    info about SmartPhone
      * @param position position of SmartPhone in ViewPager
      * @return A new instance of fragment PhoneDetailsFragment.
      */
@@ -129,30 +129,40 @@ public class PhonesDetailsFragment extends Fragment implements View.OnClickListe
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
-                    if (mPhone.getCount() <= 0) {
-                        onButtonPressed();
-                        handler.sendEmptyMessage(mPhone.getCount());
+                    while (!stop) {
+                        if (mPhone.getCount() <= 0) {
+                            onButtonPressed();
+                            handler.sendEmptyMessage(mPhone.getCount());
 
-                    } else {
-                        mPhone.setCount(mPhone.getCount() - 1);
-                        handler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                try {
-                                    String count = mPhone.getCount() + getResources().getString(R.string.pieces);
-                                    mTvCount.setText(count);
-                                } catch (IllegalStateException e) {
-                                    e.printStackTrace();
+                        } else {
+                            mPhone.setCount(mPhone.getCount() - 1);
+                            handler.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    try {
+                                        String count = mPhone.getCount() + getResources().getString(R.string.pieces);
+                                        mTvCount.setText(count);
+                                    } catch (IllegalStateException e) {
+                                        e.printStackTrace();
+                                    }
+                                    Toast.makeText(context, "Item in your inventory", Toast.LENGTH_SHORT).show();
+
                                 }
-                                Toast.makeText(context, "Item in your inventory", Toast.LENGTH_SHORT).show();
-                            }
-                        });
-                        onButtonPressed();
+                            });
+                            onButtonPressed();
+                        }
+                        stop = true;
                     }
                 }
             });
             thread.start();
         }
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        stop = true;
     }
 
     /**
@@ -164,4 +174,5 @@ public class PhonesDetailsFragment extends Fragment implements View.OnClickListe
     public interface OnBuyBtnClcListener {
         void onBuyBtnClicked(int position, SmartPhone phone);
     }
+
 }

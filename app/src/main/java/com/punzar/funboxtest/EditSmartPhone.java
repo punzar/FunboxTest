@@ -128,15 +128,15 @@ public class EditSmartPhone extends Fragment implements View.OnClickListener {
                     Thread thread = new Thread(new Runnable() {
                         @Override
                         public void run() {
-                           try {
-                               mPhone.setName(mNameET.getText().toString());
+                            try {
+                                mPhone.setName(mNameET.getText().toString());
 
-                               mPhone.setPrice(Double.parseDouble(mPriceET.getText().toString()));
-                               mPhone.setCount(Integer.parseInt(mCountET.getText().toString()));
-                               onButtonPressed(view);
-                           }catch (NumberFormatException e){
-                               handler.post(runToast);
-                           }
+                                mPhone.setPrice(Double.parseDouble(mPriceET.getText().toString()));
+                                mPhone.setCount(Integer.parseInt(mCountET.getText().toString()));
+                                onButtonPressed(view);
+                            } catch (NumberFormatException e) {
+                                handler.post(runToast);
+                            }
                         }
                     });
                     thread.start();
